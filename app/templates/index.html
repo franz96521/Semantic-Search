@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Bookstore</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/css/select2.min.css" rel="stylesheet" />
+    <!-- Bootstrap CSS for the modal -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Select2 JavaScript -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/js/select2.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .search-container {
+            text-align: left;
+            margin-bottom: 20px;
+        }
+        #searchInput, #author_id,#editorial_id , #gender_id, #year_id {
+            padding: 3px;
+            width: 200px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin: 5px;
+            font-size: 14px;
+        }
+        #searchButton {
+            padding: 10px 15px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        #searchButton:hover {
+            background-color: #0056b3;
+        }
+        #author_id {
+            appearance: none; /* Removes default arrow */
+            background-color: #fff;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 5'%3E%3Cpath fill='%23999' d='M2 0L0 2h4L2 0zM0 3l2 2 2-2H0z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px top 50%;
+            background-size: 10px 10px;
+            cursor: pointer;
+            
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: #fff;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f8f8f8;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        a {
+            display: inline-block;
+            padding: 10px 15px;
+            margin-right: 10px;
+            background-color: #007bff;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 4px;
+            text-align: center;
+        }
+        a:hover {
+            background-color: #0056b3;
+        }
+        .button-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Welcome to the Bookstore</h1>
+    <!-- Search Inputs -->
+    <div class="search-container">               
+        <select id="editorial_id" name="editorial_id" required>
+            <option value="" disabled selected>Select an author</option>
+            {% for editorial in editorials %}
+                <option value="{{ editorial[0] }}">{{ editorial[0] }}</option>
+            {% endfor %}
+        </select>
+        <select id="author_id" name="author_id" required>
+            <option value="" disabled selected>Select an author</option>
+            {% for author in authors %}
+                <option value="{{ author.name }}">{{ author.name }}</option>
+            {% endfor %}
+        </select>
+        <input type="number" id="year_id" name="year_id" placeholder="Year">
+
+        <input type="text" id="searchInput" placeholder="Search for books by description...">
+        <input type="text" id="gender_id" placeholder="Gender">
+        <button id="searchButton">Search</button>
+    </div>
+
+    <!-- Table for displaying books -->
+    <table id="booksTable">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Editorial</th>
+                <th>Year</th>
+                <th>Gender</th>
+                <th>Author</th>
+                <th>Price</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody id="booksBody">
+            {% for book in books %}
+            <tr>
+                <td>{{ book.title }}</td>
+                <td>{{ book.editorial }}</td>
+                <td>{{ book.edition_year }}</td>
+                <td>{{ book.gender }}</td>
+                <td>{{ book.author.name }}</td>
+                <td>${{ book.price }}</td>
+                <td>{{ book.description }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Buttons -->
+    <div class="button-container">
+        <a href="{{ url_for('main.add_book') }}">Add New Book</a>
+        <a href="{{ url_for('main.add_author') }}">Add New Author</a>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            $('#author_id').select2({
+                placeholder: 'Select an author',
+                allowClear: true
+            });
+        });
+        $(document).ready(function() {
+            $('#editorial_id').select2({
+                placeholder: 'Select an Editorial',
+                allowClear: true
+            });
+        });
+        document.getElementById('searchButton').addEventListener('click', searchBooks);
+    
+        document.getElementById('searchInput').addEventListener('keyup', function(event) {
+            if (event.key === 'Enter') {
+                searchBooks();
+            }
+        });
+        document.getElementById('year_id').addEventListener('keyup', function(event) {
+            if (event.key === 'Enter') {
+                searchBooks();
+            }
+        });
+        document.getElementById('editorial_id').addEventListener('keyup', function(event) {
+            if (event.key === 'Enter') {
+                searchBooks();
+            }
+        });
+        document.getElementById('gender_id').addEventListener('keyup', function(event) {
+            if (event.key === 'Enter') {
+                searchBooks();
+            }
+        });
+    
+        async function searchBooks() {
+            const query = document.getElementById('searchInput').value;
+            const authorQuery = document.getElementById('author_id').value;
+            const yearQuery = document.getElementById('year_id').value;
+            const genderQuery = document.getElementById('gender_id').value;
+            const editorialQuery = document.getElementById('editorial_id').value;
+    
+            if (query.trim() === '' && !authorQuery && !yearQuery && !genderQuery && !editorialQuery) {
+                // If both queries are empty, reload the page to show all books
+                window.location.reload();
+                return;
+            }
+    
+            const response = await fetch('{{ url_for('main.semantic_search') }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({ query, authorQuery , yearQuery, genderQuery, editorialQuery })
+            });
+    
+            const books = await response.json();
+            const tbody = document.getElementById('booksBody');
+            tbody.innerHTML = '';  // Clear existing rows
+    
+            books.forEach(book => {
+                const row = `<tr>
+                    <td>${book.title}</td>
+                    <td>${book.editorial}</td>
+                    <td>${book.edition_year}</td>
+                    <td>${book.gender}</td>
+                    <td>${book.author}</td>
+                    <td>$${book.price}</td>
+                    <td>${book.description}</td>                    
+                </tr>`;
+                tbody.insertAdjacentHTML('beforeend', row);
+            });
+        }
+    </script>
+    
+</body>
+</html>
